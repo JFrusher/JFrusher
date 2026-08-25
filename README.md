@@ -7,14 +7,8 @@
 
 </div>
 
-I work in OSAT process engineering at Custom Interconnect, on an industrial placement — the
-assembly and test end of semiconductor manufacturing, where the interesting problems are the
-ones a yield chart will not explain on its own.
-
-The repositories here are what I build the rest of the time. Most of them exist because
-something needed doing and every existing answer was heavier than the problem. A few exist
-to find out whether an idea worked, and two of those found out that it did not — which is in
-their READMEs, in the results table, rather than quietly left out.
+I work in OSAT process engineering at Custom Interconnect, on an industrial placement, I 
+develop code for my own personal needs, work needs, enjoyment and interest.
 
 ## Now
 
