@@ -1,0 +1,45 @@
+name: Refresh README
+
+on:
+  schedule:
+    # 05:17 UTC, deliberately off the hour: GitHub's scheduler is busiest at :00 and jobs
+    # queued there are routinely delayed by tens of minutes.
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-readme
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Rewrite the marker blocks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/update-readme.mjs
+
+      # The script only writes when the content differs, so an unchanged README means a quiet
+      # day - not a failure. Committing anyway would put a bot commit in the contribution
+      # heatmap that the same README displays.
+      - name: Commit, only if something changed
+        run: |
+          if git diff --quiet -- README.md; then
+            echo 'README.md unchanged, nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git commit -m 'Refresh the Now and Recent activity blocks'
+          git push
