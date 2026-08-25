@@ -13,6 +13,12 @@
  *      README.md untouched, which leaves yesterday's correct content in place.
  *   3. No dependencies, and no package.json to declare them in. Node 18+ only.
  *
+ * On the events endpoint: GitHub strips event payloads. A PushEvent arrives carrying only
+ * the head SHA - no commit list, no commit count - and a PullRequestEvent's nested PR object
+ * has no title or html_url. So nothing here reads a subject straight out of an event. The
+ * list is filtered and collapsed first, and only the handful of events that survive are
+ * enriched with a second request each.
+ *
  * Run: node scripts/update-readme.mjs
  */
 
@@ -30,12 +36,10 @@ const SKIPPED = new Set([USER.toLowerCase(), '.github']);
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /**
- * One GET against the API. Throws on anything that is not a 2xx JSON array, because every
- * endpoint used here returns a list and a surprise shape means the output would be wrong
- * rather than merely stale.
+ * One GET against the API.
  *
  * @param {string} path
- * @returns {Promise<object[]>}
+ * @returns {Promise<unknown>}
  */
 async function api(path) {
   const headers = {
@@ -51,12 +55,40 @@ async function api(path) {
   if (!response.ok) {
     throw new Error(`GET ${path} -> ${response.status} ${response.statusText}`);
   }
+  return response.json();
+}
 
-  const body = await response.json();
+/**
+ * A list endpoint. An unexpected shape means the output would be wrong rather than merely
+ * stale, so it throws.
+ *
+ * @param {string} path
+ * @returns {Promise<object[]>}
+ */
+async function apiList(path) {
+  const body = await api(path);
   if (!Array.isArray(body)) {
     throw new Error(`GET ${path} -> expected an array, got ${typeof body}`);
   }
   return body;
+}
+
+/**
+ * An optional detail lookup - a commit subject, a pull request title. These enrich a line
+ * that is already correct without them, so a failure degrades the line rather than the run:
+ * a force-pushed-away SHA should not take the whole page down. It is logged, not swallowed.
+ *
+ * @param {string} path
+ * @returns {Promise<object | null>}
+ */
+async function apiDetail(path) {
+  try {
+    const body = await api(path);
+    return body && typeof body === 'object' ? body : null;
+  } catch (error) {
+    console.warn(`update-readme: detail lookup failed, continuing without it - ${error.message}`);
+    return null;
+  }
 }
 
 /**
@@ -73,12 +105,17 @@ function formatDate(iso) {
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
+/** The calendar day an event landed on, for grouping. @param {string} iso */
+function dayKey(iso) {
+  return iso.slice(0, 10);
+}
+
 /**
  * A commit subject is arbitrary text going into a markdown table cell. Take the first line,
  * neutralise the characters that would otherwise break the table or turn into formatting,
  * and trim to length on a word boundary.
  *
- * @param {string} message
+ * @param {string} [message]
  * @returns {string}
  */
 function cell(message) {
@@ -93,7 +130,7 @@ function cell(message) {
     const lastSpace = cut.lastIndexOf(' ');
     subject = `${(lastSpace > SUBJECT_MAX / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}...`;
   }
-  return subject || '_no message_';
+  return subject;
 }
 
 /**
@@ -104,117 +141,137 @@ function cell(message) {
  * @returns {Promise<string>}
  */
 async function buildNow() {
-  const repos = (await api(`/users/${USER}/repos?sort=pushed&per_page=100&type=owner`))
+  const header = ['| Repository | Last push | Latest commit |', '| --- | --- | --- |'];
+
+  const repos = (await apiList(`/users/${USER}/repos?sort=pushed&per_page=100&type=owner`))
     .filter((repo) => !repo.fork && !repo.archived && !SKIPPED.has(repo.name.toLowerCase()))
     .slice(0, NOW_COUNT);
 
   if (repos.length === 0) {
-    return '| Repository | Last push | Latest commit |\n| --- | --- | --- |\n| _nothing public_ | | |';
+    return [...header, '| _nothing public_ | | |'].join('\n');
   }
 
   const rows = await Promise.all(
     repos.map(async (repo) => {
-      const [commit] = await api(`/repos/${repo.full_name}/commits?per_page=1`);
-      const subject = commit ? cell(commit.commit?.message) : '_no commits_';
+      const [commit] = await apiList(`/repos/${repo.full_name}/commits?per_page=1`);
+      const subject = cell(commit?.commit?.message) || '_no commits_';
       return `| [${repo.name}](${repo.html_url}) | ${formatDate(repo.pushed_at)} | ${subject} |`;
     })
   );
 
-  return ['| Repository | Last push | Latest commit |', '| --- | --- | --- |', ...rows].join('\n');
+  return [...header, ...rows].join('\n');
 }
 
 /**
- * Turn one event into a line, or null for the event types this page does not care about.
- * Branch and tag creations are dropped; a new repository is worth a line.
+ * Reduce the raw event feed to the lines worth showing, newest first.
  *
- * @param {object} event
- * @returns {{ date: string, repo: string, kind: string, text: string, commits: number } | null}
+ * Pushes to the same repository on the same day collapse into one entry keyed on the newest
+ * head SHA, so an afternoon of five pushes to one repo is one line rather than five. Branch
+ * and tag creations are dropped as noise; a new repository is worth a line. Stars, forks and
+ * issue activity are not this page's business.
+ *
+ * @param {object[]} events
+ * @returns {Array<{ date: string, repo: string, name: string, type: string, payload: object }>}
  */
-function describeEvent(event) {
-  const repo = event.repo?.name ?? '';
-  const name = repo.split('/')[1] ?? repo;
-  const url = `https://github.com/${repo}`;
-  const link = `[${name}](${url})`;
-  const date = formatDate(event.created_at);
-  const base = { date, repo, kind: event.type, commits: 0 };
+function selectEvents(events) {
+  const selected = [];
+  const seenPushes = new Set();
+  const seenPulls = new Set();
 
-  switch (event.type) {
+  for (const event of events) {
+    const repo = event.repo?.name ?? '';
+    const name = repo.split('/')[1] ?? repo;
+    if (!name || SKIPPED.has(name.toLowerCase())) continue;
+
+    const entry = { date: formatDate(event.created_at), repo, name, type: event.type, payload: event.payload ?? {} };
+
+    switch (event.type) {
+      case 'PushEvent': {
+        if (!entry.payload.head) continue;
+        const key = `${repo}@${dayKey(event.created_at)}`;
+        if (seenPushes.has(key)) continue;
+        seenPushes.add(key);
+        break;
+      }
+      case 'PullRequestEvent': {
+        const action = entry.payload.action;
+        if (!['opened', 'merged', 'reopened', 'closed'].includes(action)) continue;
+        const number = entry.payload.number ?? entry.payload.pull_request?.number;
+        if (!number) continue;
+        // The feed is newest first, so the first event seen for a pull request is its
+        // latest state: keep "merged" and drop the "opened" further down the list.
+        const key = `${repo}#${number}`;
+        if (seenPulls.has(key)) continue;
+        seenPulls.add(key);
+        break;
+      }
+      case 'ReleaseEvent': {
+        if (entry.payload.action !== 'published' || !entry.payload.release?.tag_name) continue;
+        break;
+      }
+      case 'CreateEvent': {
+        if (entry.payload.ref_type !== 'repository') continue;
+        break;
+      }
+      default:
+        continue;
+    }
+
+    selected.push(entry);
+    if (selected.length === ACTIVITY_COUNT) break;
+  }
+
+  return selected;
+}
+
+/**
+ * Turn one selected event into its markdown line, fetching the one detail the stripped
+ * payload does not carry.
+ *
+ * @param {{ date: string, repo: string, name: string, type: string, payload: object }} entry
+ * @returns {Promise<string>}
+ */
+async function renderEvent({ date, repo, name, type, payload }) {
+  const link = `[${name}](https://github.com/${repo})`;
+
+  switch (type) {
     case 'PushEvent': {
-      const commits = Number(event.payload?.size) || event.payload?.commits?.length || 0;
-      const head = event.payload?.commits?.at(-1)?.message;
-      const subject = head ? ` - ${cell(head)}` : '';
-      return { ...base, commits, text: `pushed to ${link}${subject}` };
+      const commit = await apiDetail(`/repos/${repo}/commits/${payload.head}`);
+      const subject = cell(commit?.commit?.message);
+      return `- **${date}** - pushed to ${link}${subject ? ` - ${subject}` : ''}`;
     }
     case 'PullRequestEvent': {
-      const pr = event.payload?.pull_request;
-      if (!pr) return null;
-      const action = event.payload.action === 'closed' && pr.merged ? 'merged' : event.payload.action;
-      if (!['opened', 'merged', 'reopened'].includes(action)) return null;
-      return {
-        ...base,
-        text: `${action} [${name}#${pr.number}](${pr.html_url}) - ${cell(pr.title)}`
-      };
+      const number = payload.number ?? payload.pull_request.number;
+      const action = payload.action === 'closed' && payload.pull_request?.merged ? 'merged' : payload.action;
+      const pull = await apiDetail(`/repos/${repo}/pulls/${number}`);
+      const title = cell(pull?.title);
+      const url = `https://github.com/${repo}/pull/${number}`;
+      return `- **${date}** - ${action} [${name}#${number}](${url})${title ? ` - ${title}` : ''}`;
     }
     case 'ReleaseEvent': {
-      const release = event.payload?.release;
-      if (!release || event.payload.action !== 'published') return null;
-      return {
-        ...base,
-        text: `released [${name} ${cell(release.tag_name)}](${release.html_url})`
-      };
+      const tag = payload.release.tag_name;
+      const url = payload.release.html_url ?? `https://github.com/${repo}/releases/tag/${tag}`;
+      return `- **${date}** - released [${name} ${cell(tag)}](${url})`;
     }
-    case 'CreateEvent': {
-      if (event.payload?.ref_type !== 'repository') return null;
-      return { ...base, text: `started ${link}` };
-    }
+    case 'CreateEvent':
+      return `- **${date}** - started ${link}`;
     default:
-      return null;
+      throw new Error(`unhandled event type reached rendering: ${type}`);
   }
 }
 
 /**
- * The five most recent public events. Consecutive pushes to the same repository on the same
- * day collapse into one line with a commit count, so a busy afternoon does not fill the
- * whole list with the same repository name.
- *
  * @returns {Promise<string>}
  */
 async function buildActivity() {
-  const events = await api(`/users/${USER}/events/public?per_page=100`);
-  const lines = [];
+  const selected = selectEvents(await apiList(`/users/${USER}/events/public?per_page=100`));
 
-  for (const event of events) {
-    if (SKIPPED.has((event.repo?.name ?? '').split('/')[1]?.toLowerCase() ?? '')) continue;
-
-    const described = describeEvent(event);
-    if (!described) continue;
-
-    const previous = lines.at(-1);
-    const sameRun =
-      previous?.kind === 'PushEvent' &&
-      described.kind === 'PushEvent' &&
-      previous.repo === described.repo &&
-      previous.date === described.date;
-
-    if (sameRun) {
-      previous.commits += described.commits;
-      continue;
-    }
-
-    lines.push(described);
-    if (lines.length === ACTIVITY_COUNT) break;
-  }
-
-  if (lines.length === 0) {
+  if (selected.length === 0) {
     return '- _Nothing public in the last 90 days._';
   }
 
-  return lines
-    .map(({ date, text, kind, commits }) => {
-      const count = kind === 'PushEvent' && commits > 1 ? ` (${commits} commits)` : '';
-      return `- **${date}** - ${text}${count}`;
-    })
-    .join('\n');
+  const lines = await Promise.all(selected.map(renderEvent));
+  return lines.join('\n');
 }
 
 /**
@@ -249,5 +306,8 @@ async function main() {
 
 main().catch((error) => {
   console.error(`update-readme: ${error.message}`);
-  process.exit(1);
+  // Set the code and let Node unwind rather than calling process.exit(): tearing the
+  // process down with requests still in flight trips a libuv assertion on Windows, which
+  // turns a clean "the API said no" into a crash with a misleading exit code.
+  process.exitCode = 1;
 });

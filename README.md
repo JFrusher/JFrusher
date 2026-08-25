@@ -26,7 +26,9 @@ their READMEs, in the results table, rather than quietly left out.
 <!-- NOW:START -->
 | Repository | Last push | Latest commit |
 | --- | --- | --- |
-| _waiting for the first refresh_ | | |
+| [readme-svg-generator](https://github.com/JFrusher/readme-svg-generator) | 25 Aug 2026 | Refine button styling in SVG helper for better visibility |
+| [Trousseau](https://github.com/JFrusher/Trousseau) | 25 Aug 2026 | Make sync's dry run read-only, and stop the shell mangling commit... |
+| [cadence](https://github.com/JFrusher/cadence) | 24 Aug 2026 | feat: add timeline export functionality and moment handling |
 <!-- NOW:END -->
 
 ## Tools
@@ -166,7 +168,11 @@ I write 96.7% Jupyter, which is not true in any useful sense.
 ## Recent activity
 
 <!-- ACTIVITY:START -->
-- _waiting for the first refresh_
+- **25 Aug 2026** - pushed to [readme-svg-generator](https://github.com/JFrusher/readme-svg-generator) - Add playground support for six cards, presets and shareable state
+- **25 Aug 2026** - pushed to [Trousseau](https://github.com/JFrusher/Trousseau) - Make sync's dry run read-only, and stop the shell mangling commit...
+- **25 Aug 2026** - merged [Trousseau#1](https://github.com/JFrusher/Trousseau/pull/1) - Readme tone
+- **24 Aug 2026** - pushed to [cadence](https://github.com/JFrusher/cadence) - Ignore .remember/, which holds session transcripts with real names
+- **24 Aug 2026** - pushed to [Brigade](https://github.com/JFrusher/Brigade) - Ignore .remember/, which holds session transcripts with real names
 <!-- ACTIVITY:END -->
 
 <details>
