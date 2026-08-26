@@ -60,8 +60,8 @@ Research benches created to explore fundamental concepts as well as interesting 
 </div>
 
 - **[poly-compress](https://github.com/JFrusher/poly-compress)** — I wanted to see if I
-- could parameterize the gaps between letters into a complex polynomial/fourier to
-- compress text but it never even got close to plain text
+  could parameterize the gaps between letters into a complex polynomial/fourier to
+  compress text but it never even got close to plain text
 - **[CathSim](https://github.com/JFrusher/CathSim)** — a 2D endovascular catheter trainer
   where every thing was based around a physics solver and I tried to bring in realistic 
   real constrains such as flouroscopy contrast.
