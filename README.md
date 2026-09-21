@@ -21,22 +21,15 @@ Here's a selection of small but really helpful tools I've built to help myself.
   <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/readme-svg-generator&theme=system&width=425" alt="readme-svg-generator" width="425" />
 </picture>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Plaque&theme=dark&width=425" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Trousseau&theme=dark&width=425" />
   <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Plaque&theme=system&width=425" alt="Plaque" width="425" />
 </picture>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/cadence&theme=dark&width=425" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Toke&theme=dark&width=425" />
   <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/cadence&theme=system&width=425" alt="Cadence" width="425" />
 </picture>
 
 </div>
-
-- **[readme-svg-generator](https://github.com/JFrusher/readme-svg-generator)** generates brutalist ui 
-inspired svg's as seen in this repo
-- **[Plaque](https://github.com/JFrusher/Plaque)** I really struggled with a {{token}} based
-design suite for things like place cards and invites for y wedding so I built this with those uses in mind
-- **[Cadence](https://github.com/JFrusher/cadence)** I also couldnt find a software o build complex 
-timelines with multiple different stakeholders and uses so I decided to build this for myself and I've had vendors ask which software I used to make it
 
 ## Research
 
@@ -69,43 +62,6 @@ Research benches created to explore fundamental concepts as well as interesting 
   StatsBomb open-data; rugby union has nothing. A schema and a converter for the corpus that
   does not exist yet. Still at a v0.3 draft.
 
-<details>
-<summary><b>Five repositories, one wedding</b></summary>
-
-<br />
-
-Four apps have each been assigned a slice of the same day. Seating is in one,
-the running order in another, the crew in a third, the place cards in a fourth.
-Each app is able to export a file, but none of them can ever seem to get along
-, especially not in the critical moment when the place cards list table 6 but the
-seating arrangement has table 8 in mind.
-
-Trousseau is the one agreed-upon file, along with the validation that happens
-before anything else is even recorded. Git manages the pointers while a private
-remote hosts the bytes because these repos are open while the data contains
-personal emails of real people.
-
-```mermaid
-graph TD
-    T["<b>Trousseau</b><br/>one file, one wedding"]
-    T --- TB["Tableaux<br/><i>seating</i>"]
-    T --- CA["Cadence<br/><i>timeline</i>"]
-    T --- BR["Brigade<br/><i>crew and jobs</i>"]
-    T --- PL["Plaque<br/><i>stationery</i>"]
-    CA -. "day.json" .-> BR
-```
-
-| | |
-| --- | --- |
-| [Trousseau](https://github.com/JFrusher/Trousseau) | The schema, the collector, the checks, and the version history of every state the wedding has been in |
-| [Tableaux](https://github.com/JFrusher/Tableaux) | A to-scale room, tables dragged onto a canvas, guests assigned to tables or to individual seats |
-| [Cadence](https://github.com/JFrusher/cadence) | The timeline, the clashes, and five printed pieces of paper |
-| [Brigade](https://github.com/JFrusher/Brigade) | The jobs hanging off Cadence's blocks, and the people doing them |
-| [Plaque](https://github.com/JFrusher/Plaque) | The place cards, imposed onto sheets that waste the least card stock |
-
-Shared design language but no shared code.
-
-</details>
 
 ## The numbers
 
@@ -127,18 +83,6 @@ Shared design language but no shared code.
 
 </div>
 
-## Recent activity
-
-<!-- ACTIVITY:START -->
-- **25 Aug 2026** - pushed to [readme-svg-generator](https://github.com/JFrusher/readme-svg-generator) - Add playground support for six cards, presets and shareable state
-- **25 Aug 2026** - pushed to [Trousseau](https://github.com/JFrusher/Trousseau) - Make sync's dry run read-only, and stop the shell mangling commit...
-- **25 Aug 2026** - merged [Trousseau#1](https://github.com/JFrusher/Trousseau/pull/1) - Readme tone
-- **24 Aug 2026** - pushed to [cadence](https://github.com/JFrusher/cadence) - Ignore .remember/, which holds session transcripts with real names
-- **24 Aug 2026** - pushed to [Brigade](https://github.com/JFrusher/Brigade) - Ignore .remember/, which holds session transcripts with real names
-<!-- ACTIVITY:END -->
-
-<details>
-<summary><b>Everything else</b></summary>
 
 <br />
 
@@ -160,29 +104,3 @@ Shared design language but no shared code.
 [jfrusher.github.io](https://jfrusher.github.io) ·
 [LinkedIn](https://www.linkedin.com/in/jacob-frusher-44333124b/) ·
 [jacob@frusher.co.uk](mailto:jacob@frusher.co.uk)
-
-<details>
-<summary><b>How this page stays current</b></summary>
-
-<br />
-
-Every card above is a live SVG from
-[readme-svg-generator](https://github.com/JFrusher/readme-svg-generator), rendered on request
-against the GitHub API and cached for four hours. The stars, descriptions and topics on the
-repository cards are whatever they are right now — there is no copy of them in this file to
-go stale. Each card is wrapped in a `<picture>` so it follows your colour scheme rather than
-mine.
-
-The **Now** and **Recent activity** blocks are rewritten every night by
-[a workflow](.github/workflows/refresh-readme.yml) running
-[one dependency-free script](scripts/update-readme.mjs). It commits only when the content
-actually changed: dates are absolute rather than relative, precisely so that a quiet week
-produces no commits at all instead of a week of bot noise in the heatmap two sections up. If
-the API is unreachable the script exits non-zero without writing, which leaves yesterday's
-correct content in place and turns the run red.
-
-One known edge: GitHub disables scheduled workflows after 60 days with no repository
-activity, and the bot's own commits do not reset that clock. If this page ever stops moving,
-that is where to look.
-
-</details>
