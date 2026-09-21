@@ -22,11 +22,11 @@ Here's a selection of small but really helpful tools I've built to help myself.
 </picture>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Trousseau&theme=dark&width=425" />
-  <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Plaque&theme=system&width=425" alt="Plaque" width="425" />
+  <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Trousseau&theme=system&width=425" alt="Plaque" width="425" />
 </picture>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Toke&theme=dark&width=425" />
-  <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/cadence&theme=system&width=425" alt="Cadence" width="425" />
+  <img src="https://readme-svg-generator.vercel.app/api/repo?repo=JFrusher/Toke&theme=system&width=425" alt="Cadence" width="425" />
 </picture>
 
 </div>
