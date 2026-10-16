@@ -3,8 +3,6 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=jfrusher&label=Profile%20views&color=0e75b6&style=flat" alt="jfrusher" /> </p>
 
-<p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=jfrusher" alt="jfrusher" /></a> </p>
-
 - 🔭 I’m currently working on [PortDB](https://github.com/JFrusher/PortDB)
 
 - 🌱 I’m currently learning **Database engines and Analytics**
