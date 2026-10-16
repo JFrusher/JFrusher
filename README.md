@@ -1,5 +1,5 @@
 <h1 align="center">Hi 👋, I'm Jacob</h1>
-<h3 align="center">A passionate frontend developer from India</h3>
+<h3 align="center">Engine-First Developer | Building Core Systems, Physics & Simulations</h3>
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=jfrusher&label=Profile%20views&color=0e75b6&style=flat" alt="jfrusher" /> </p>
 
@@ -7,7 +7,7 @@
 
 - 🔭 I’m currently working on [PortDB](https://github.com/JFrusher/PortDB)
 
-- 🌱 I’m currently learning **Database and Analytics**
+- 🌱 I’m currently learning **Database engines and Analytics**
 
 - 👯 I’m looking to collaborate on [Knotwork](https://github.com/JFrusher/Knotwork)
 
